@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Asmaul Husna</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Amiri (untuk Tulisan Arab Kaligrafi) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+        }
+        .font-arabic {
+            font-family: 'Amiri', serif;
+        }
+        /* Custom Scrollbar for inner card views */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #10b981;
+            border-radius: 8px;
+        }
+        /* Subtle pulse for floating elements */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+        /* Confetti / Particle Canvas overlay */
+        #fxCanvas {
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-slate-950 p-2 sm:p-4 overflow-x-hidden select-none">
+
+    <!-- CONTAINER UTAMA 16:9 TERKUNCI -->
+    <div class="relative w-full max-w-5xl aspect-video bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 rounded-2xl sm:rounded-3xl border-4 border-amber-400/30 shadow-2xl overflow-hidden flex flex-col justify-between text-white">
+
+        <!-- CANVAS EFEK PARTIKEL BINTANG / SELEBRASI -->
+        <canvas id="fxCanvas"></canvas>
+
+        <!-- HEADER ATAS (TETAP DI SEMUA FASE KECUALI SPLASH) -->
+        <header id="gameHeader" class="hidden relative z-20 flex justify-between items-center px-4 py-2 sm:py-3 bg-slate-900/80 backdrop-blur border-b border-amber-500/20">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="kembaliKeMenuUtama()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all active:scale-95 border border-amber-500/30">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">Menu</span>
+                </button>
+                <div class="flex items-center gap-1.5 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/30">
+                    <i class="fa-solid fa-mosque text-emerald-400 text-xs sm:text-sm"></i>
+                    <span id="judulHeader" class="text-xs sm:text-sm font-bold text-emerald-200">Petualangan Asmaul Husna</span>
+                </div>
+            </div>
+
+            <!-- KONTROL SKOR & AUDIO HALAMAN GAMEPLAY -->
+            <div class="flex items-center gap-3">
+                <div id="statsBar" class="hidden flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-bold">
+                    <div class="flex items-center gap-1 text-amber-400 bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-500/30">
+                        <i class="fa-solid fa-star text-amber-400"></i>
+                        <span id="skorText">0</span>
+                    </div>
+                    <div id="nyawaContainer" class="flex items-center gap-1 text-rose-400 bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-500/30">
+                        <i class="fa-solid fa-heart"></i>
+                        <span id="nyawaText">3</span>
+                    </div>
+                    <div id="timerContainer" class="hidden items-center gap-1 text-cyan-400 bg-cyan-950/40 px-2.5 py-1 rounded-lg border border-cyan-500/30">
+                        <i class="fa-solid fa-stopwatch"></i>
+                        <span id="timerText">15s</span>
+                    </div>
+                </div>
+
+                <!-- TOMBOL BUNGKAM SUARA (MUTE/UNMUTE) -->
+                <button id="btnMute" onclick="toggleMuteAudio()" class="w-8 h-8 sm:w-9 sm:h-9 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-amber-400 rounded-full flex items-center justify-center transition-all active:scale-90 border border-amber-500/30 shadow-md">
+                    <i id="iconMute" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- CONTENT AREA (STATE MANAGEMENT LAYAR) -->
+        <main id="mainContainer" class="relative z-10 flex-1 flex flex-col justify-center items-center p-3 sm:p-6 overflow-hidden">
+
+            <!-- FASE 1: SPLASH SCREEN / INTRO -->
+            <section id="screenSplash" class="flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 animate-fadeIn w-full max-w-2xl">
+                <div class="relative">
+                    <div class="absolute -inset-2 bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 rounded-full blur-xl opacity-40 animate-pulse"></div>
+                    <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-emerald-900/90 rounded-full border-4 border-amber-400 flex items-center justify-center shadow-2xl">
+                        <span class="font-arabic text-3xl sm:text-5xl text-amber-300 font-bold">ﷲ</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="font-arabic text-2xl sm:text-4xl text-amber-300 mb-1">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</h2>
+                    <h1 class="text-xl sm:text-3xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-emerald-300 to-teal-200">
+                        PETUALANGAN ASMAUL HUSNA
+                    </h1>
+                    <p class="text-xs sm:text-sm text-emerald-200/80 mt-1">Belajar & Bermain Mengenal Al-Malik, Al-Quddus, dan As-Salam</p>
+                </div>
+
+                <button onclick="gantiLayar('screenMenuUtama')" class="px-6 py-3 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 font-extrabold text-sm sm:text-base rounded-2xl shadow-lg hover:shadow-amber-500/30 transition-all transform hover:scale-105 active:scale-95 flex items-center gap-2 border-2 border-amber-200">
+                    <i class="fa-solid fa-play"></i>
+                    <span>MULAI PETUALANGAN</span>
+                </button>
+            </section>
+
+            <!-- FASE 2: HALAMAN JUDUL (MAIN MENU) -->
+            <section id="screenMenuUtama" class="hidden flex-col items-center justify-center w-full h-full space-y-4 sm:space-y-6 animate-fadeIn">
+                <div class="text-center space-y-1">
+                    <span class="px-3 py-1 bg-amber-500/20 border border-amber-400/40 rounded-full text-amber-300 text-xs font-semibold uppercase tracking-widest">Game Edukasi Siswa SD</span>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-amber-300 drop-shadow-md">PETUALANGAN ASMAUL HUSNA</h1>
+                    <p class="text-xs sm:text-sm text-slate-300">Pilih menu untuk memulai pembelajaran atau kuis interaktif</p>
+                </div>
+
+                <!-- GRID TOMBOL MENU UTAMA -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full max-w-lg px-4">
+                    <button onclick="bukaMenuMode()" class="p-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl shadow-lg border border-emerald-400/40 flex items-center justify-between text-left transition-all transform hover:-translate-y-1 active:scale-95 group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-emerald-950/60 rounded-xl flex items-center justify-center border border-emerald-400/30 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-gamepad text-emerald-300 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm sm:text-base text-white">Mulai Bermain</h3>
+                                <p class="text-[10px] sm:text-xs text-emerald-200/80">Kuis 1 Pemain & 2 Pemain</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-emerald-300 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                    <button onclick="bukaLayarBelajar()" class="p-3.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 rounded-2xl shadow-lg border border-amber-400/40 flex items-center justify-between text-left transition-all transform hover:-translate-y-1 active:scale-95 group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-amber-950/60 rounded-xl flex items-center justify-center border border-amber-400/30 group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-book-open text-amber-300 text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-sm sm:text-base text-white">Belajar Dulu</h3>
+                                <p class="text-[10px] sm:text-xs text-amber-200/80">Materi, Arti & Teladan</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-amber-300 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                    <button onclick="bukaModalPetunjuk()" class="p-3 bg-slate-800/80 hover:bg-slate-700/80 rounded-2xl border border-slate-600 flex items-center gap-3 transition-all hover:scale-102 active:scale-95">
+                        <div class="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-cyan-400">
+                            <i class="fa-solid fa-circle-info text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-xs sm:text-sm text-slate-200">Petunjuk Bermain</span>
+                    </button>
+
+                    <button onclick="bukaPengaturanSuara()" class="p-3 bg-slate-800/80 hover:bg-slate-700/80 rounded-2xl border border-slate-600 flex items-center gap-3 transition-all hover:scale-102 active:scale-95">
+                        <div class="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-indigo-400">
+                            <i class="fa-solid fa-sliders text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-xs sm:text-sm text-slate-200">Pengaturan Suara</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- FASE 3: MENU BELAJAR INTERAKTIF ("BELAJAR DULU") -->
+            <section id="screenBelajar" class="hidden flex-col w-full h-full max-w-4xl animate-fadeIn justify-between">
+                <!-- PILIHAN TAB MATERI -->
+                <div class="flex justify-center gap-2 mb-2 sm:mb-4">
+                    <button onclick="pilihMateriBelajar('al-malik')" id="tab-al-malik" class="tab-materi px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-400/30">
+                        Al-Malik (الملك)
+                    </button>
+                    <button onclick="pilihMateriBelajar('al-quddus')" id="tab-al-quddus" class="tab-materi px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-400/30">
+                        Al-Quddus (القدوس)
+                    </button>
+                    <button onclick="pilihMateriBelajar('as-salam')" id="tab-as-salam" class="tab-materi px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-400/30">
+                        As-Salam (السلام)
+                    </button>
+                </div>
+
+                <!-- KARTU DETAIL MATERI -->
+                <div class="flex-1 bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 overflow-y-auto flex flex-col md:flex-row gap-4 items-center">
+                    <div class="w-full md:w-1/3 flex flex-col items-center justify-center text-center p-3 bg-emerald-950/50 rounded-xl border border-emerald-500/20">
+                        <div id="materiKaligrafi" class="font-arabic text-5xl sm:text-6xl text-amber-300 font-bold mb-2"> الملك </div>
+                        <h2 id="materiNama" class="text-xl font-extrabold text-emerald-300">Al-Malik</h2>
+                        <span id="materiArti" class="text-xs sm:text-sm text-amber-200 font-semibold mt-1">Maha Merajai / Menguasai</span>
+                        <button onclick="putarSuaraPelafalan()" class="mt-3 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 shadow">
+                            <i class="fa-solid fa-volume-high"></i>
+                            Dengarkan Pelafalan
+                        </button>
+                    </div>
+
+                    <div class="w-full md:w-2/3 space-y-3 text-xs sm:text-sm">
+                        <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <h4 class="font-bold text-amber-300 flex items-center gap-2 mb-1">
+                                <i class="fa-solid fa-book text-emerald-400"></i> Pengertian
+                            </h4>
+                            <p id="materiDeskripsi" class="text-slate-200 leading-relaxed">
+                                Allah Al-Malik berarti Allah Maha Merajai dan Menguasai seluruh alam semesta. Segala sesuatu yang ada di bumi dan langit berada di bawah kekuasaan Allah SWT.
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <h4 class="font-bold text-emerald-300 flex items-center gap-2 mb-1">
+                                <i class="fa-solid fa-child-reaching text-amber-400"></i> Contoh Sikap Teladan Anak SD
+                            </h4>
+                            <ul id="materiSikap" class="list-disc list-inside text-slate-200 space-y-1">
+                                <li>Menahan amarah dan emosi saat diganggu teman.</li>
+                                <li>Menjadi pemimpin kelompok yang adil dan tidak bersikap sewenang-wenang.</li>
+                                <li>Mandiri dan pandai menguasai/mengendalikan diri sendiri.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-between items-center">
+                    <button onclick="gantiLayar('screenMenuUtama')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-500/30">
+                        <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Menu
+                    </button>
+                    <button onclick="bukaMenuModeDenganMateri()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 flex items-center gap-1.5">
+                        Lanjut Uji Pemahaman <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- FASE 4: SELEKSI MODE PEMAIN & KESULITAN -->
+            <section id="screenMode" class="hidden flex-col items-center justify-center w-full h-full max-w-xl animate-fadeIn space-y-4">
+                <div class="text-center">
+                    <h2 class="text-xl sm:text-2xl font-extrabold text-amber-300">Pilih Mode Permainan</h2>
+                    <p class="text-xs text-slate-300">Tentukan jumlah pemain dan tingkat kesulitan</p>
+                </div>
+
+                <!-- PILIHAN MODE PEMAIN -->
+                <div class="grid grid-cols-2 gap-3 w-full">
+                    <button onclick="pilihModePemain('1P')" id="btnMode1P" class="p-3 bg-emerald-900/60 border-2 border-emerald-400 rounded-2xl flex flex-col items-center gap-1 transition-all">
+                        <i class="fa-solid fa-user text-2xl text-emerald-300"></i>
+                        <span class="font-bold text-xs sm:text-sm text-white">1 Pemain</span>
+                        <span class="text-[10px] text-emerald-200/80">Petualangan Solo</span>
+                    </button>
+
+                    <button onclick="pilihModePemain('2P')" id="btnMode2P" class="p-3 bg-slate-800/80 border-2 border-slate-600 rounded-2xl flex flex-col items-center gap-1 transition-all opacity-80 hover:opacity-100">
+                        <i class="fa-solid fa-user-group text-2xl text-amber-400"></i>
+                        <span class="font-bold text-xs sm:text-sm text-white">2 Pemain</span>
+                        <span class="text-[10px] text-amber-200/80">Adu Cepat Split-Screen</span>
+                    </button>
+                </div>
+
+                <!-- PILIHAN TINGKAT KESULITAN -->
+                <div class="w-full bg-slate-900/90 p-3 sm:p-4 rounded-2xl border border-slate-700 space-y-2">
+                    <label class="text-xs font-bold text-amber-300 block text-center uppercase tracking-wider">Pilih Kesulitan</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="pilihKesulitan('mudah')" id="btnDiffMudah" class="p-2 bg-emerald-600 text-white font-bold rounded-xl text-xs text-center border border-emerald-400 transition-all">
+                            Mudah
+                        </button>
+                        <button onclick="pilihKesulitan('sedang')" id="btnDiffSedang" class="p-2 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs text-center border border-slate-600 transition-all">
+                            Sedang
+                        </button>
+                        <button onclick="pilihKesulitan('sulit')" id="btnDiffSulit" class="p-2 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs text-center border border-slate-600 transition-all">
+                            Sulit (Timer)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 w-full">
+                    <button onclick="gantiLayar('screenMenuUtama')" class="w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm rounded-xl transition-all border border-slate-600">
+                        Batal
+                    </button>
+                    <button onclick="mulaiPermainanGame()" class="w-2/3 py-2.5 bg-gradient-to-r from-amber-500 to-emerald-500 hover:from-amber-400 hover:to-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all transform hover:scale-102 active:scale-95">
+                        Mulai Tantangan Kuis <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- FASE 5: ARENA GAMEPLAY UTAMA -->
+            <section id="screenGameplay" class="hidden flex-col w-full h-full animate-fadeIn justify-between">
+
+                <!-- 1 PLAYER MODE LAYOUT -->
+                <div id="layout1Player" class="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 items-stretch overflow-hidden">
+                    
+                    <!-- KIRI: MASKOT GURU / USTADZ WITH DYNAMIC EXPRESSION -->
+                    <div class="w-full md:w-1/3 bg-slate-900/80 border border-emerald-500/30 rounded-2xl p-3 flex flex-row md:flex-col items-center justify-between relative overflow-hidden">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="w-20 h-20 sm:w-28 sm:h-28 relative my-1">
+                                <!-- Maskot Guru SVG Render -->
+                                <div id="maskotContainer" class="w-full h-full transition-transform duration-300">
+                                    <svg id="svgMaskot" viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                                        <!-- Topi Peci Hitam -->
+                                        <rect x="30" y="15" width="40" height="20" rx="4" fill="#1e293b"/>
+                                        <rect x="28" y="32" width="44" height="4" rx="2" fill="#334155"/>
+                                        <!-- Wajah -->
+                                        <circle cx="50" cy="50" r="24" fill="#fde047"/>
+                                        <!-- Mata (Dinamis via JS) -->
+                                        <circle id="mataKiri" cx="42" cy="48" r="3" fill="#0f172a"/>
+                                        <circle id="mataKanan" cx="58" cy="48" r="3" fill="#0f172a"/>
+                                        <!-- Mulut (Dinamis via JS) -->
+                                        <path id="mulutMaskot" d="M 42 58 Q 50 65 58 58" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                        <!-- Baju Gamis Hijau -->
+                                        <path d="M 25 90 C 25 72 35 70 50 70 C 65 70 75 72 75 90 Z" fill="#059669"/>
+                                        <path d="M 47 70 L 47 90 M 53 70 L 53 90" stroke="#fef08a" stroke-width="1.5"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span id="namaGuru" class="text-xs font-bold text-amber-300">Ustadz Ahmad</span>
+                        </div>
+
+                        <!-- BALON DIALOG GURU -->
+                        <div class="flex-1 md:w-full bg-emerald-950/70 border border-emerald-500/30 rounded-xl p-2.5 ml-3 md:ml-0 md:mt-2 text-[11px] sm:text-xs text-emerald-100 flex items-center justify-center text-center">
+                            <p id="dialogGuru">Bismillah! Jawab pertanyaan ini dengan cermat ya anak-anak saleh...</p>
+                        </div>
+                    </div>
+
+                    <!-- KANAN: AREA SOAL DENGAN TRANSISI HALUS -->
+                    <div class="w-full md:w-2/3 bg-slate-900/90 border border-amber-500/30 rounded-2xl p-3 sm:p-5 flex flex-col justify-between overflow-y-auto relative transition-all duration-300">
+                        
+                        <!-- HEADER TIPE SOAL & PROGRESS -->
+                        <div class="flex justify-between items-center border-b border-slate-700/80 pb-2 mb-2">
+                            <span id="badgeTipeSoal" class="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-400/30 rounded-full text-[10px] font-extrabold uppercase">
+                                Pilihan Ganda
+                            </span>
+                            <span id="labelNomorSoal" class="text-xs font-bold text-slate-300">Soal 1 / 10</span>
+                        </div>
+
+                        <!-- TEKS PERTANYAAN -->
+                        <div class="my-auto py-2">
+                            <h3 id="teksSoal" class="text-sm sm:text-base md:text-lg font-bold text-white leading-relaxed">
+                                Memuat soal pertanyaan...
+                            </h3>
+                        </div>
+
+                        <!-- INTERAKSI JAWABAN (PILGAN / MATCH / REORDER / FILL) -->
+                        <div id="containerJawaban" class="w-full mt-2 space-y-2">
+                            <!-- Diisi secara dinamis oleh JS sesuai tipe soal -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2 PLAYER SPLIT SCREEN LAYOUT -->
+                <div id="layout2Player" class="hidden flex-1 grid grid-cols-2 gap-2 sm:gap-4 overflow-hidden">
+                    <!-- PEMAIN 1 -->
+                    <div class="bg-emerald-950/60 border-2 border-emerald-500/50 rounded-2xl p-3 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-emerald-500/30 pb-1">
+                            <span class="font-bold text-xs text-emerald-300">Pemain 1 (Hijau)</span>
+                            <span id="skorP1" class="text-xs font-extrabold text-amber-300">Skor: 0</span>
+                        </div>
+                        <div id="soalP1" class="my-auto text-xs font-semibold text-white">
+                            Soal Pemain 1...
+                        </div>
+                        <div id="opsiP1" class="grid grid-cols-1 gap-1.5">
+                            <!-- Tombol Opsi P1 -->
+                        </div>
+                    </div>
+
+                    <!-- PEMAIN 2 -->
+                    <div class="bg-indigo-950/60 border-2 border-indigo-500/50 rounded-2xl p-3 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-indigo-500/30 pb-1">
+                            <span class="font-bold text-xs text-indigo-300">Pemain 2 (Biru)</span>
+                            <span id="skorP2" class="text-xs font-extrabold text-amber-300">Skor: 0</span>
+                        </div>
+                        <div id="soalP2" class="my-auto text-xs font-semibold text-white">
+                            Soal Pemain 2...
+                        </div>
+                        <div id="opsiP2" class="grid grid-cols-1 gap-1.5">
+                            <!-- Tombol Opsi P2 -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FASE 6: LAYAR HASIL & KEMENANGAN -->
+            <section id="screenHasil" class="hidden flex-col items-center justify-center w-full h-full max-w-xl animate-fadeIn space-y-4 text-center">
+                <div class="relative">
+                    <div class="absolute -inset-2 bg-gradient-to-r from-amber-400 to-emerald-400 rounded-full blur-lg opacity-50 animate-pulse"></div>
+                    <div class="relative w-20 h-20 bg-slate-900 border-4 border-amber-400 rounded-full flex items-center justify-center text-amber-300 text-3xl shadow-xl">
+                        <i id="iconHasil" class="fa-solid fa-trophy"></i>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 id="judulHasil" class="text-2xl sm:text-3xl font-extrabold text-amber-300">MasyaAllah, Luar Biasa!</h2>
+                    <p id="subHasil" class="text-xs sm:text-sm text-slate-300">Kamu telah menyelesaikan Kuis Asmaul Husna</p>
+                </div>
+
+                <!-- BINTANG RATING RESULT -->
+                <div id="containerBintangHasil" class="flex justify-center gap-2 text-3xl text-amber-400">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+
+                <!-- DETAIL SKOR -->
+                <div class="w-full bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 grid grid-cols-3 gap-2">
+                    <div class="bg-slate-800/80 p-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 block uppercase">Total Skor</span>
+                        <span id="skorAkhirText" class="text-base sm:text-xl font-extrabold text-amber-300">100</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 block uppercase">Jawaban Benar</span>
+                        <span id="benarText" class="text-base sm:text-xl font-extrabold text-emerald-400">10</span>
+                    </div>
+                    <div class="bg-slate-800/80 p-2 rounded-xl">
+                        <span class="text-[10px] text-slate-400 block uppercase">Gelar Pejuang</span>
+                        <span id="gelarText" class="text-xs sm:text-sm font-bold text-cyan-300 truncate block">Bintang Al-Malik</span>
+                    </div>
+                </div>
+
+                <!-- TOMBOL NAVIGASI SETELAH GAME -->
+                <div class="flex gap-2 w-full">
+                    <button onclick="mulaiPermainanGame()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl transition-all active:scale-95 shadow">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Main Lagi
+                    </button>
+                    <button onclick="bukaLayarBelajar()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition-all active:scale-95 shadow">
+                        <i class="fa-solid fa-book mr-1"></i> Belajar Lagi
+                    </button>
+                    <button onclick="gantiLayar('screenMenuUtama')" class="px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm rounded-xl transition-all border border-slate-600">
+                        <i class="fa-solid fa-house"></i>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- MODAL PENJELASAN UMPAN BALIK (FEEDBACK MODAL) -->
+    <div id="modalFeedback" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-amber-400 rounded-2xl max-w-md w-full p-4 sm:p-5 text-white shadow-2xl space-y-3 animate-fadeIn">
+            <div class="flex items-center gap-3">
+                <div id="iconFeedback" class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-emerald-500/20 text-emerald-400 border border-emerald-400/40">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h3 id="judulFeedback" class="font-extrabold text-base text-amber-300">Jawaban Tepat!</h3>
+                    <p id="subFeedback" class="text-xs text-slate-300">Alhamdulillah, jawabanmu benar.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                <span class="font-bold text-amber-300 block mb-1">Pembahasan Edukasi:</span>
+                <p id="teksPembahasan">Pembahasan akan muncul di sini...</p>
+            </div>
+
+            <button onclick="tutupFeedbackLanjutSoal()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm rounded-xl transition-all active:scale-95 shadow flex items-center justify-center gap-1.5">
+                <span>Lanjut Soal Berikutnya</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PETUNJUK BERMAIN -->
+    <div id="modalPetunjuk" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-emerald-400 rounded-2xl max-w-md w-full p-4 sm:p-5 text-white shadow-2xl space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-extrabold text-base text-emerald-300 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info"></i> Petunjuk Bermain
+                </h3>
+                <button onclick="tutupModal('modalPetunjuk')" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="text-xs sm:text-sm space-y-2 text-slate-200 max-h-60 overflow-y-auto pr-1">
+                <p>1. <strong>Mode 1 Pemain:</strong> Selesaikan tantangan kuis dengan menjawab tipe soal Pilihan Ganda, Menjodohkan, Menyusun Kata, dan Isian Singkat.</p>
+                <p>2. <strong>Mode 2 Pemain:</strong> Berlombalah dengan temanmu secara split-screen untuk mendapat skor tertinggi.</p>
+                <p>3. <strong>Fitur Belajar Dulu:</strong> Buka materi untuk mempelajari arti tulisan Arab dan contoh teladan sehari-hari anak SD.</p>
+                <p>4. <strong>3 Asmaul Husna:</strong>
+                    <ul class="list-disc list-inside ml-2 text-amber-300">
+                        <li><strong>Al-Malik:</strong> Allah Maha Merajai/Menguasai</li>
+                        <li><strong>Al-Quddus:</strong> Allah Maha Suci</li>
+                        <li><strong>As-Salam:</strong> Allah Maha Memberi Keselamatan</li>
+                    </ul>
+                </p>
+            </div>
+            <button onclick="tutupModal('modalPetunjuk')" class="w-full py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL PENGATURAN SUARA -->
+    <div id="modalPengaturanSuara" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-indigo-500 rounded-2xl max-w-xs w-full p-4 text-white shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="font-extrabold text-sm text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Pengaturan Suara
+                </h3>
+                <button onclick="tutupModal('modalPengaturanSuara')" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                    <span>Musik Latar (BGM)</span>
+                    <button onclick="toggleBGMSetting()" id="btnToggleBGM" class="px-3 py-1 bg-emerald-600 rounded-lg font-bold">
+                        ON
+                    </button>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span>Efek Suara (SFX)</span>
+                    <button onclick="toggleSFXSetting()" id="btnToggleSFX" class="px-3 py-1 bg-emerald-600 rounded-lg font-bold">
+                        ON
+                    </button>
+                </div>
+            </div>
+            <button onclick="tutupModal('modalPengaturanSuara')" class="w-full py-2 bg-slate-800 text-slate-200 font-bold text-xs rounded-xl border border-slate-700">
+                Selesai
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT GAME ENGINE UTAMA -->
+    <script>
+        /* 
+        ===================================================================
+        1. KONFIGURASI ASET APLIKASI (ASET_APLIKASI)
+        ===================================================================
+        Pengguna dapat dengan mudah mengganti URL placeholder di bawah ini 
+        dengan URL gambar/audio asli milik sendiri.
+        */
+        const ASET_APLIKASI = {
+            // Background Placeholders (Akan digunakan sebagai fallback/overlay jika diisi)
+            BACKGROUND_MENU: "https://placehold.co/1280x720/0f172a/10b981?text=Background+Menu+Asmaul+Husna",
+            BACKGROUND_BELAJAR: "https://placehold.co/1280x720/064e3b/f59e0b?text=Background+Belajar",
+            BACKGROUND_GAME: "https://placehold.co/1280x720/0284c7/ffffff?text=Background+Arena+Kuis",
+            BACKGROUND_RESULT: "https://placehold.co/1280x720/312e81/fbbf24?text=Background+Hasil",
+
+            // Karakter Maskot Placeholders
+            KARAKTER_GURU_SENANG: "https://placehold.co/200x200/10b981/ffffff?text=Ustadz+Senang",
+            KARAKTER_GURU_NETRAL: "https://placehold.co/200x200/64748b/ffffff?text=Ustadz+Netral",
+            KARAKTER_GURU_BINGUNG: "https://placehold.co/200x200/f59e0b/ffffff?text=Ustadz+Bingung",
+
+            // Audio Placeholder URLs (Audio Sampel)
+            AUDIO_BGM: "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=calm-background-113063.mp3",
+            SFX_KLIK: "",
+            SFX_BENAR: "",
+            SFX_SALAH: "",
+            SFX_MENANG: "",
+            SFX_BINTANG: ""
+        };
+
+        /* 
+        ===================================================================
+        2. SYSTEM AUDIO SYNTHESIZER (WEB AUDIO API FALLBACK)
+        ===================================================================
+        Menjamin efek suara interaktif langsung berbunyi merdu tanpa tergantung
+        file eksternal yang terputus internet.
+        */
+        let audioCtx = null;
+        let isMuted = false;
+        let bgmEnabled = true;
+        let sfxEnabled = true;
+        let bgmOscillator = null;
+        let bgmInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // SFX Generator menggunakan Web Audio API Synthesizer
+        function mainkanSFX(tipe) {
+            if (isMuted || !sfxEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (tipe === 'klik') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (tipe === 'benar') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (tipe === 'salah') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now); // A3
+                    osc.frequency.setValueAtTime(164.81, now + 0.15); // E3
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (tipe === 'menang') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const subOsc = audioCtx.createOscillator();
+                        const subGain = audioCtx.createGain();
+                        subOsc.type = 'triangle';
+                        subOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        subGain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                        subGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                        subOsc.connect(subGain);
+                        subGain.connect(audioCtx.destination);
+                        subOsc.start(now + idx * 0.12);
+                        subOsc.stop(now + idx * 0.12 + 0.25);
+                    });
+                }
+            } catch (e) {
+                console.log("Audio Web Synth Info:", e);
+            }
+        }
+
+        // BGM Procedural Loop Lembut
+        function startProceduralBGM() {
+            if (isMuted || !bgmEnabled || bgmInterval) return;
+            initAudio();
+            const melodi = [261.63, 293.66, 329.63, 392.00, 440.00]; // Pentatonic C
+            let step = 0;
+            bgmInterval = setInterval(() => {
+                if (isMuted || !bgmEnabled) return;
+                try {
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(melodi[step % melodi.length], now);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.8);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.8);
+                    step++;
+                } catch (e) {}
+            }, 900);
+        }
+
+        function stopProceduralBGM() {
+            if (bgmInterval) {
+                clearInterval(bgmInterval);
+                bgmInterval = null;
+            }
+        }
+
+        function toggleMuteAudio() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('btnMute');
+            const icon = document.getElementById('iconMute');
+            if (isMuted) {
+                stopProceduralBGM();
+                icon.className = "fa-solid fa-volume-xmark text-xs sm:text-sm text-rose-400";
+            } else {
+                startProceduralBGM();
+                icon.className = "fa-solid fa-volume-high text-xs sm:text-sm text-amber-400";
+            }
+        }
+
+        function toggleBGMSetting() {
+            bgmEnabled = !bgmEnabled;
+            const btn = document.getElementById('btnToggleBGM');
+            btn.textContent = bgmEnabled ? "ON" : "OFF";
+            btn.className = bgmEnabled ? "px-3 py-1 bg-emerald-600 rounded-lg font-bold" : "px-3 py-1 bg-rose-600 rounded-lg font-bold";
+            if (!bgmEnabled) stopProceduralBGM();
+            else startProceduralBGM();
+        }
+
+        function toggleSFXSetting() {
+            sfxEnabled = !sfxEnabled;
+            const btn = document.getElementById('btnToggleSFX');
+            btn.textContent = sfxEnabled ? "ON" : "OFF";
+            btn.className = sfxEnabled ? "px-3 py-1 bg-emerald-600 rounded-lg font-bold" : "px-3 py-1 bg-rose-600 rounded-lg font-bold";
+        }
+
+        /* 
+        ===================================================================
+        3. DATABASE SOAL (BANK_SOAL) - MINIMAL 18 SOAL LENGKAP
+        ===================================================================
+        Topik: Al-Malik, Al-Quddus, As-Salam
+        Tipe: pilihan_ganda, jodohkan, susun_kata, isian_singkat
+        Kesulitan: mudah, sedang, sulit
+        */
+        const BANK_SOAL = [
+            // --- AL-MALIK (6 SOAL) ---
+            {
+                id: 1,
+                topik: "al-malik",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Apa arti dari Asmaul Husna 'Al-Malik'?",
+                pilihan: ["Maha Suci", "Maha Merajai / Menguasai", "Maha Memberi Keselamatan", "Maha Pengasih"],
+                kunci: 1,
+                pembahasan: "Al-Malik artinya Allah Maha Merajai atau Maha Menguasai seluruh alam semesta beserta isinya."
+            },
+            {
+                id: 2,
+                topik: "al-malik",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Contoh sikap meneladani Al-Malik dalam kehidupan sehari-hari anak SD adalah...",
+                pilihan: ["Suka marah saat kalah main", "Mampu menahan emosi dan menguasai diri", "Mementingkan diri sendiri", "Memaksa teman ikuti kemauan kita"],
+                kunci: 1,
+                pembahasan: "Meneladani Al-Malik berarti belajar menguasai diri sendiri, seperti menahan amarah dan emosi."
+            },
+            {
+                id: 3,
+                topik: "al-malik",
+                tipe: "susun_kata",
+                kesulitan: "sedang",
+                pertanyaan: "Susunlah kata berikut menjadi arti dari Al-Malik!",
+                kataAcak: ["Menguasai", "Maha", "Merajai", "dan"],
+                kunciUrutan: ["Maha", "Merajai", "dan", "Menguasai"],
+                pembahasan: "Arti Al-Malik yang tepat adalah 'Maha Merajai dan Menguasai'."
+            },
+            {
+                id: 4,
+                topik: "al-malik",
+                tipe: "jodohkan",
+                kesulitan: "sedang",
+                pertanyaan: "Pasangkanlah nama Asmaul Husna berikut dengan artinya yang benar!",
+                pasangan: [
+                    { nama: "Al-Malik", arti: "Maha Merajai" },
+                    { nama: "Al-Quddus", arti: "Maha Suci" },
+                    { nama: "As-Salam", arti: "Maha Memberi Keselamatan" }
+                ],
+                pembahasan: "Al-Malik = Maha Merajai, Al-Quddus = Maha Suci, As-Salam = Maha Memberi Keselamatan."
+            },
+            {
+                id: 5,
+                topik: "al-malik",
+                tipe: "isian_singkat",
+                kesulitan: "sulit",
+                pertanyaan: "Lengkapi kata berikut: Allah adalah Raja Semesta Alam karena Allah bersifat Al-_____",
+                kunci: "MALIK",
+                pembahasan: "Al-Malik adalah sifat Allah yang menunjukkan bahwa Dialah Raja seluruh alam semesta."
+            },
+            {
+                id: 6,
+                topik: "al-malik",
+                tipe: "pilihan_ganda",
+                kesulitan: "sulit",
+                pertanyaan: "Saat dipercaya menjadi ketua kelompok belajar di kelas, sikap sesuai Al-Malik adalah...",
+                pilihan: ["Memerintah teman seenaknya", "Adil dan bijaksana memimpin teman", "Tiduran dan tidak mau bekerja", "Marah jika saran tidak didengar"],
+                kunci: 1,
+                pembahasan: "Pemimpin yang baik meneladani Al-Malik dengan bersikap adil, jujur, dan tidak sewenang-wenang."
+            },
+
+            // --- AL-QUDDUS (6 SOAL) ---
+            {
+                id: 7,
+                topik: "al-quddus",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Asmaul Husna 'Al-Quddus' memiliki arti...",
+                pilihan: ["Maha Suci", "Maha Pengampun", "Maha Mendengar", "Maha Merajai"],
+                kunci: 0,
+                pembahasan: "Al-Quddus artinya Maha Suci, bersih dari segala kekurangan dan cela."
+            },
+            {
+                id: 8,
+                topik: "al-quddus",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Cara menjaga kebersihan badan dan tempat salat sebagai bukti meneladani Al-Quddus adalah...",
+                pilihan: ["Suka buang sampah sembarangan", "Mandi teratur dan berwudhu", "Biarkan seragam kotor", "Jarang mencuci tangan"],
+                kunci: 1,
+                pembahasan: "Al-Quddus mengajarkan kita untuk menjaga kebersihan lahiriah (badan/pakaian) dan batiniah (hati)."
+            },
+            {
+                id: 9,
+                topik: "al-quddus",
+                tipe: "susun_kata",
+                kesulitan: "sedang",
+                pertanyaan: "Susun kata-kata ini untuk membentuk arti Al-Quddus!",
+                kataAcak: ["Segala", "Suci", "Dari", "Maha", "Celah"],
+                kunciUrutan: ["Maha", "Suci", "Dari", "Segala", "Celah"],
+                pembahasan: "Al-Quddus berarti Maha Suci dari segala cela dan kekurangan."
+            },
+            {
+                id: 10,
+                topik: "al-quddus",
+                tipe: "isian_singkat",
+                kesulitan: "sedang",
+                pertanyaan: "Selain membersihkan badan, meneladani Al-Quddus artinya membersihkan hati dari sifat iri dan _____",
+                kunci: "DENGKI",
+                pembahasan: "Meneladani Al-Quddus juga berarti membersihkan hati dari sifat dengki, sombong, dan dendam."
+            },
+            {
+                id: 11,
+                topik: "al-quddus",
+                tipe: "pilihan_ganda",
+                kesulitan: "sulit",
+                pertanyaan: "Sebelum melaksanakan salat, kita diwajibkan bersuci dengan wudhu. Hal ini sangat berkaitan dengan nama Allah...",
+                pilihan: ["As-Salam", "Al-Quddus", "Al-Malik", "Al-Khaliq"],
+                kunci: 1,
+                pembahasan: "Wudhu adalah ritual bersuci yang mencerminkan kecintaan pada kesucian (Al-Quddus)."
+            },
+            {
+                id: 12,
+                topik: "al-quddus",
+                tipe: "jodohkan",
+                kesulitan: "sulit",
+                pertanyaan: "Jodohkan tindakan kesucian dengan bagian yang dibersihkan!",
+                pasangan: [
+                    { nama: "Berwudhu", arti: "Bersuci Anggota Badan" },
+                    { nama: "Piket Kelas", arti: "Kebersihan Lingkungan" },
+                    { nama: "Menjauhi Iri", arti: "Kebersihan Hati" }
+                ],
+                pembahasan: "Menjaga kesucian mencakup kebersihan badan, lingkungan, dan kesucian hati."
+            },
+
+            // --- AS-SALAM (6 SOAL) ---
+            {
+                id: 13,
+                topik: "as-salam",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Asmaul Husna 'As-Salam' artinya Allah Maha...",
+                pilihan: ["Memberi Keselamatan", "Mengetahui", "Melihat", "Menciptakan"],
+                kunci: 0,
+                pembahasan: "As-Salam artinya Maha Memberi Keselamatan dan Kedamaian bagi seluruh makhluk-Nya."
+            },
+            {
+                id: 14,
+                topik: "as-salam",
+                tipe: "pilihan_ganda",
+                kesulitan: "mudah",
+                pertanyaan: "Sikap ramah dan menyebarkan kedamaian sesuai As-Salam ditunjukkan dengan...",
+                pilihan: ["Mengejek teman yang jatuh", "Mengucapkan salam saat bertemu teman", "Memicu pertengkaran di kelas", "Suka jahil dan mengganggu"],
+                kunci: 1,
+                pembahasan: "Mengucapkan salam 'Assalamu'alaikum' adalah doa keselamatan yang mencerminkan As-Salam."
+            },
+            {
+                id: 15,
+                topik: "as-salam",
+                tipe: "susun_kata",
+                kesulitan: "sedang",
+                pertanyaan: "Susunlah kata berikut menjadi arti dari As-Salam!",
+                kataAcak: ["Keselamatan", "Memberi", "Maha"],
+                kunciUrutan: ["Maha", "Memberi", "Keselamatan"],
+                pembahasan: "As-Salam berarti Maha Memberi Keselamatan."
+            },
+            {
+                id: 16,
+                topik: "as-salam",
+                tipe: "isian_singkat",
+                kesulitan: "sedang",
+                pertanyaan: "Ketika melihat dua teman bertengkar, sikap anak saleh yang meneladani As-Salam adalah menda-_____ mereka.",
+                kunci: "MAIKAN",
+                pembahasan: "Mendamaikan teman yang bertengkar menciptakan kedamaian dan keselamatan (As-Salam)."
+            },
+            {
+                id: 17,
+                topik: "as-salam",
+                tipe: "pilihan_ganda",
+                kesulitan: "sulit",
+                pertanyaan: "Kalimat salam 'Assalamu'alaikum wa rahmatullahi wa barakatuh' mengandung doa untuk mendapatkan...",
+                pilihan: ["Kekayaan berlimpah", "Keselamatan, rahmat, dan keberkahan", "Kemenangan main game", "Pujian dari guru"],
+                kunci: 1,
+                pembahasan: "Salam Islam adalah doa ketenteraman, keselamatan, rahmat, dan berkah dari Allah As-Salam."
+            },
+            {
+                id: 18,
+                topik: "as-salam",
+                tipe: "jodohkan",
+                kesulitan: "sulit",
+                pertanyaan: "Jodohkan Asmaul Husna dengan perilaku teladannya!",
+                pasangan: [
+                    { nama: "Al-Malik", arti: "Menahan Emosi & Diri" },
+                    { nama: "Al-Quddus", arti: "Menjaga Kebersihan" },
+                    { nama: "As-Salam", arti: "Menyebarkan Kedamaian" }
+                ],
+                pembahasan: "Setiap Asmaul Husna memberikan teladan akhlak mulia dalam kehidupan anak SD."
+            }
+        ];
+
+        /* 
+        ===================================================================
+        4. DATA MATERI EDUTAINMENT ("BELAJAR DULU")
+        ===================================================================
+        */
+        const DATA_MATERI = {
+            "al-malik": {
+                kaligrafi: "الملك",
+                nama: "Al-Malik",
+                arti: "Maha Merajai / Menguasai",
+                deskripsi: "Allah Al-Malik berarti Allah adalah Penguasa Tunggal seluruh alam semesta. Segala langit, bumi, dan makhluk berada di dalam genggaman kekuasaan-Nya.",
+                sikap: [
+                    "Menahan amarah dan dapat menguasai emosi saat bermain.",
+                    "Menjadi ketua kelas atau kelompok yang adil dan tidak sewenang-wenang.",
+                    "Mandiri dan disiplin mengatur waktu belajar sehari-hari."
+                ]
+            },
+            "al-quddus": {
+                kaligrafi: "القدوس",
+                nama: "Al-Quddus",
+                arti: "Maha Suci",
+                deskripsi: "Allah Al-Quddus artinya Allah Mahasuci dari segala kekurangan, kesalahan, dan kelemahan. Allah adalah Zat yang paling sempurna.",
+                sikap: [
+                    "Rajin mandi, wudhu, dan menjaga kebersihan pakaian serta peralatan sekolah.",
+                    "Merawat kebersihan ruang kelas dan tidak membuang sampah sembarangan.",
+                    "Membersihkan hati dari sifat iri, dengki, dan sombong kepada teman."
+                ]
+            },
+            "as-salam": {
+                kaligrafi: "السلام",
+                nama: "As-Salam",
+                arti: "Maha Memberi Keselamatan",
+                deskripsi: "Allah As-Salam berarti Allah adalah sumber keselamatan, kedamaian, dan ketenteraman bagi seluruh makhluk di dunia dan akhirat.",
+                sikap: [
+                    "Selalu menyapa dan mengucapkan salam 'Assalamu'alaikum' saat bertemu guru/teman.",
+                    "Suka mendamaikan teman yang sedang berselisih atau bertengkar.",
+                    "Bersikap ramah, santun, dan tidak suka berbuat rusuh di sekolah."
+                ]
+            }
+        };
+
+        /* 
+        ===================================================================
+        5. GAME STATE & LOGIC ENGINE
+        ===================================================================
+        */
+        let gameState = {
+            modePemain: "1P", // '1P' atau '2P'
+            kesulitan: "mudah", // 'mudah', 'sedang', 'sulit'
+            materiAktif: "al-malik",
+            skor: 0,
+            nyawa: 3,
+            indexSoal: 0,
+            bankSoalAktif: [],
+            soalSaatIni: null,
+            timer: null,
+            sisaWaktu: 15,
+            jawabanTerpilihMatch: [],
+            jawabanSusunKata: [],
+            
+            // State 2 Player
+            skorP1: 0,
+            skorP2: 0,
+            soalP1: null,
+            soalP2: null
+        };
+
+        // Inisialisasi Saat Halaman Dimuat
+        window.onload = function() {
+            initFXCanvas();
+            pilihMateriBelajar('al-malik');
+            mainkanSFX('klik');
+        };
+
+        // Fungsi Transisi Layar Halus
+        function gantiLayar(idLayarTujuan) {
+            mainkanSFX('klik');
+            initAudio();
+            startProceduralBGM();
+
+            const daftarLayar = ['screenSplash', 'screenMenuUtama', 'screenBelajar', 'screenMode', 'screenGameplay', 'screenHasil'];
+            daftarLayar.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const target = document.getElementById(idLayarTujuan);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+
+            // Tampilkan Header jika bukan di Splash
+            const header = document.getElementById('gameHeader');
+            if (idLayarTujuan === 'screenSplash') {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+
+            // Atur statistik header
+            const statsBar = document.getElementById('statsBar');
+            if (idLayarTujuan === 'screenGameplay') {
+                statsBar.classList.remove('hidden');
+                statsBar.classList.add('flex');
+            } else {
+                statsBar.classList.add('hidden');
+                statsBar.classList.remove('flex');
+            }
+        };
+
+        function kembaliKeMenuUtama() {
+            if (gameState.timer) clearInterval(gameState.timer);
+            gantiLayar('screenMenuUtama');
+        }
+
+        /* 
+        ===================================================================
+        6. FITUR MODE BELAJAR INTERAKTIF
+        ===================================================================
+        */
+        function bukaLayarBelajar() {
+            gantiLayar('screenBelajar');
+            pilihMateriBelajar(gameState.materiAktif || 'al-malik');
+        }
+
+        function pilihMateriBelajar(keyMateri) {
+            gameState.materiAktif = keyMateri;
+            mainkanSFX('klik');
+
+            // Reset style tab
+            document.querySelectorAll('.tab-materi').forEach(btn => {
+                btn.className = "tab-materi px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-400/30 bg-slate-800 text-slate-300 hover:bg-slate-700";
+            });
+
+            const activeBtn = document.getElementById(`tab-${keyMateri}`);
+            if (activeBtn) {
+                activeBtn.className = "tab-materi px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold transition-all border border-amber-400 bg-amber-500 text-slate-950 shadow-lg scale-105";
+            }
+
+            const data = DATA_MATERI[keyMateri];
+            if (data) {
+                document.getElementById('materiKaligrafi').textContent = data.kaligrafi;
+                document.getElementById('materiNama').textContent = data.nama;
+                document.getElementById('materiArti').textContent = data.arti;
+                document.getElementById('materiDeskripsi').textContent = data.deskripsi;
+
+                const ulSikap = document.getElementById('materiSikap');
+                ulSikap.innerHTML = "";
+                data.sikap.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    ulSikap.appendChild(li);
+                });
+            }
+        }
+
+        // Pelafalan Web Speech API
+        function putarSuaraPelafalan() {
+            mainkanSFX('klik');
+            const data = DATA_MATERI[gameState.materiAktif];
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(data.nama + ". " + data.arti);
+                utterance.lang = 'id-ID';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert(`Pelafalan: ${data.nama} - ${data.arti}`);
+            }
+        }
+
+        function bukaMenuModeDenganMateri() {
+            bukaMenuMode();
+        }
+
+        /* 
+        ===================================================================
+        7. SELEKSI MODE & KESULITAN
+        ===================================================================
+        */
+        function bukaMenuMode() {
+            gantiLayar('screenMode');
+        }
+
+        function pilihModePemain(mode) {
+            mainkanSFX('klik');
+            gameState.modePemain = mode;
+            const btn1P = document.getElementById('btnMode1P');
+            const btn2P = document.getElementById('btnMode2P');
+
+            if (mode === '1P') {
+                btn1P.className = "p-3 bg-emerald-900/80 border-2 border-emerald-400 rounded-2xl flex flex-col items-center gap-1 transition-all scale-102 shadow-lg";
+                btn2P.className = "p-3 bg-slate-800/80 border-2 border-slate-600 rounded-2xl flex flex-col items-center gap-1 transition-all opacity-70 hover:opacity-100";
+            } else {
+                btn2P.className = "p-3 bg-indigo-900/80 border-2 border-indigo-400 rounded-2xl flex flex-col items-center gap-1 transition-all scale-102 shadow-lg";
+                btn1P.className = "p-3 bg-slate-800/80 border-2 border-slate-600 rounded-2xl flex flex-col items-center gap-1 transition-all opacity-70 hover:opacity-100";
+            }
+        }
+
+        function pilihKesulitan(diff) {
+            mainkanSFX('klik');
+            gameState.kesulitan = diff;
+            const btns = {
+                mudah: document.getElementById('btnDiffMudah'),
+                sedang: document.getElementById('btnDiffSedang'),
+                sulit: document.getElementById('btnDiffSulit')
+            };
+
+            Object.keys(btns).forEach(key => {
+                if (key === diff) {
+                    btns[key].className = "p-2 bg-emerald-600 text-white font-bold rounded-xl text-xs text-center border-2 border-emerald-300 shadow-md scale-105";
+                } else {
+                    btns[key].className = "p-2 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs text-center border border-slate-600";
+                }
+            });
+        }
+
+        /* 
+        ===================================================================
+        8. ARENA GAMEPLAY UTAMA & RENDER SOAL
+        ===================================================================
+        */
+        function mulaiPermainanGame() {
+            mainkanSFX('klik');
+            
+            // Reset Stats Game
+            gameState.skor = 0;
+            gameState.nyawa = gameState.kesulitan === 'mudah' ? 5 : (gameState.kesulitan === 'sedang' ? 3 : 2);
+            gameState.indexSoal = 0;
+            gameState.skorP1 = 0;
+            gameState.skorP2 = 0;
+
+            // Filter Soal berdasarkan kesulitan
+            if (gameState.kesulitan === 'mudah') {
+                gameState.bankSoalAktif = BANK_SOAL.filter(s => s.kesulitan === 'mudah' || s.tipe === 'pilihan_ganda');
+            } else if (gameState.kesulitan === 'sedang') {
+                gameState.bankSoalAktif = BANK_SOAL.filter(s => s.kesulitan !== 'sulit');
+            } else {
+                gameState.bankSoalAktif = [...BANK_SOAL];
+            }
+
+            // Acak urutan soal
+            gameState.bankSoalAktif.sort(() => Math.random() - 0.5);
+
+            // Buka Layar Gameplay
+            gantiLayar('screenGameplay');
+
+            const layout1P = document.getElementById('layout1Player');
+            const layout2P = document.getElementById('layout2Player');
+
+            if (gameState.modePemain === '1P') {
+                layout1P.classList.remove('hidden');
+                layout1P.classList.add('flex');
+                layout2P.classList.add('hidden');
+                layout2P.classList.remove('grid');
+                tampilkanSoal1Player();
+            } else {
+                layout1P.classList.add('hidden');
+                layout1P.classList.remove('flex');
+                layout2P.classList.remove('hidden');
+                layout2P.classList.add('grid');
+                tampilkanSoal2Player();
+            }
+
+            updateStatsHeader();
+        }
+
+        function updateStatsHeader() {
+            document.getElementById('skorText').textContent = gameState.skor;
+            document.getElementById('nyawaText').textContent = gameState.nyawa;
+
+            const timerContainer = document.getElementById('timerContainer');
+            if (gameState.kesulitan === 'sulit' && gameState.modePemain === '1P') {
+                timerContainer.classList.remove('hidden');
+                timerContainer.classList.add('flex');
+            } else {
+                timerContainer.classList.add('hidden');
+                timerContainer.classList.remove('flex');
+            }
+        }
+
+        // Set Ekpresi Maskot Guru SVG
+        function setEkspresiMaskot(ekspresi) {
+            const container = document.getElementById('maskotContainer');
+            const mataKiri = document.getElementById('mataKiri');
+            const mataKanan = document.getElementById('mataKanan');
+            const mulut = document.getElementById('mulutMaskot');
+            const dialog = document.getElementById('dialogGuru');
+
+            if (ekspresi === 'senang') {
+                container.className = "w-full h-full transition-transform duration-300 scale-110 rotate-3";
+                mulut.setAttribute('d', 'M 38 56 Q 50 72 62 56'); // Senyum lebar
+                dialog.textContent = "MasyaAllah! Jawabanmu sangat tepat dan cerdas!";
+            } else if (ekspresi === 'bingung') {
+                container.className = "w-full h-full transition-transform duration-300 scale-95 -rotate-3";
+                mulut.setAttribute('d', 'M 40 62 Q 50 55 60 62'); // Sedih / Bingung
+                dialog.textContent = "Sayang sekali, coba pelajari lagi materinya ya...";
+            } else { // Netral
+                container.className = "w-full h-full transition-transform duration-300 scale-100";
+                mulut.setAttribute('d', 'M 42 58 Q 50 65 58 58');
+                dialog.textContent = "Ayo konsentrasi! Pilih jawaban yang paling benar.";
+            }
+        }
+
+        /* -----------------------------------------------------------------
+           MODE 1 PEMAIN (SINGLEPLAYER ENGINE)
+        -------------------------------------------------------------------*/
+        function tampilkanSoal1Player() {
+            if (gameState.indexSoal >= gameState.bankSoalAktif.length || gameState.nyawa <= 0) {
+                selesaiPermainan();
+                return;
+            }
+
+            setEkspresiMaskot('netral');
+            gameState.soalSaatIni = gameState.bankSoalAktif[gameState.indexSoal];
+            const soal = gameState.soalSaatIni;
+
+            // Reset Timer jika mode sulit
+            if (gameState.kesulitan === 'sulit') {
+                mulaiTimerSoal(15);
+            }
+
+            // Render Header Soal
+            document.getElementById('labelNomorSoal').textContent = `Soal ${gameState.indexSoal + 1} / ${gameState.bankSoalAktif.length}`;
+            document.getElementById('badgeTipeSoal').textContent = soal.tipe.replace('_', ' ');
+            document.getElementById('teksSoal').textContent = soal.pertanyaan;
+
+            const container = document.getElementById('containerJawaban');
+            container.innerHTML = "";
+
+            // Render Sesuai Tipe Soal
+            if (soal.tipe === 'pilihan_ganda') {
+                renderPilihanGanda(container, soal);
+            } else if (soal.tipe === 'jodohkan') {
+                renderJodohkan(container, soal);
+            } else if (soal.tipe === 'susun_kata') {
+                renderSusunKata(container, soal);
+            } else if (soal.tipe === 'isian_singkat') {
+                renderIsianSingkat(container, soal);
+            }
+        }
+
+        // Tipe 1: Pilihan Ganda
+        function renderPilihanGanda(container, soal) {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+
+            soal.pilihan.forEach((pil, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "p-3 bg-slate-800 hover:bg-emerald-600/80 text-white font-semibold text-xs sm:text-sm rounded-xl border border-slate-700 hover:border-emerald-400 text-left transition-all active:scale-95 flex items-center gap-2 group";
+                btn.innerHTML = `
+                    <span class="w-6 h-6 bg-slate-900 group-hover:bg-amber-400 group-hover:text-slate-950 text-amber-300 rounded-lg flex items-center justify-center font-bold text-xs border border-amber-500/30">
+                        ${String.fromCharCode(65 + idx)}
+                    </span>
+                    <span>${pil}</span>
+                `;
+                btn.onclick = () => verifikasiJawaban(idx === soal.kunci);
+                grid.appendChild(btn);
+            });
+
+            container.appendChild(grid);
+        }
+
+        // Tipe 2: Jodohkan (Matching Pair)
+        function renderJodohkan(container, soal) {
+            gameState.jawabanTerpilihMatch = [];
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-3";
+
+            const info = document.createElement('p');
+            info.className = "text-xs text-amber-300 font-semibold";
+            info.textContent = "Klik nama Asmaul Husna lalu pasangkan dengan artinya:";
+            wrapper.appendChild(info);
+
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-2 gap-2";
+
+            // Acak pasangan kanan
+            const pasanganKanan = [...soal.pasangan].sort(() => Math.random() - 0.5);
+
+            soal.pasangan.forEach((p, idx) => {
+                const btnKiri = document.createElement('button');
+                btnKiri.className = "p-2.5 bg-emerald-900/60 border border-emerald-400 text-emerald-200 text-xs font-bold rounded-xl text-center shadow";
+                btnKiri.textContent = p.nama;
+                grid.appendChild(btnKiri);
+
+                const btnKanan = document.createElement('button');
+                btnKanan.className = "btn-match-kanan p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 text-xs font-semibold rounded-xl text-center transition-all active:scale-95";
+                btnKanan.textContent = pasanganKanan[idx].arti;
+                btnKanan.dataset.arti = pasanganKanan[idx].arti;
+                btnKanan.onclick = () => {
+                    mainkanSFX('klik');
+                    btnKanan.classList.add('bg-amber-500', 'text-slate-950', 'border-amber-300');
+                    gameState.jawabanTerpilihMatch.push(pasanganKanan[idx].arti);
+                    if (gameState.jawabanTerpilihMatch.length === soal.pasangan.length) {
+                        // Cek Kebenaran Pasangan
+                        let benarSemua = true;
+                        soal.pasangan.forEach((pas, i) => {
+                            if (gameState.jawabanTerpilihMatch[i] !== pas.arti) benarSemua = false;
+                        });
+                        verifikasiJawaban(benarSemua);
+                    }
+                };
+                grid.appendChild(btnKanan);
+            });
+
+            wrapper.appendChild(grid);
+            container.appendChild(wrapper);
+        }
+
+        // Tipe 3: Susun Kata (Ordering / Word Puzzle)
+        function renderSusunKata(container, soal) {
+            gameState.jawabanSusunKata = [];
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-3";
+
+            // Area Kata Terpilih
+            const areaHasil = document.createElement('div');
+            areaHasil.id = "areaHasilKata";
+            areaHasil.className = "min-h-[44px] p-2 bg-slate-950/80 rounded-xl border-2 border-dashed border-amber-400/50 flex flex-wrap gap-1.5 items-center";
+            wrapper.appendChild(areaHasil);
+
+            // Bank Kata Acak
+            const bankKata = document.createElement('div');
+            bankKata.className = "flex flex-wrap gap-2 justify-center";
+
+            soal.kataAcak.forEach((kata) => {
+                const btnKata = document.createElement('button');
+                btnKata.className = "px-3 py-1.5 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-amber-400/40 text-amber-200 font-bold text-xs rounded-xl transition-all active:scale-95";
+                btnKata.textContent = kata;
+                btnKata.onclick = () => {
+                    mainkanSFX('klik');
+                    gameState.jawabanSusunKata.push(kata);
+                    btnKata.disabled = true;
+                    btnKata.classList.add('opacity-40');
+
+                    // Tambahkan ke area hasil
+                    const chip = document.createElement('span');
+                    chip.className = "px-2.5 py-1 bg-amber-400 text-slate-950 font-extrabold text-xs rounded-lg animate-fadeIn";
+                    chip.textContent = kata;
+                    areaHasil.appendChild(chip);
+
+                    // Cek jika sudah semua kata dipilih
+                    if (gameState.jawabanSusunKata.length === soal.kataAcak.length) {
+                        const isCorrect = JSON.stringify(gameState.jawabanSusunKata) === JSON.stringify(soal.kunciUrutan);
+                        verifikasiJawaban(isCorrect);
+                    }
+                };
+                bankKata.appendChild(btnKata);
+            });
+
+            wrapper.appendChild(bankKata);
+            container.appendChild(wrapper);
+        }
+
+        // Tipe 4: Isian Singkat / Typing Response
+        function renderIsianSingkat(container, soal) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "space-y-3 flex flex-col items-center";
+
+            const input = document.createElement('input');
+            input.type = "text";
+            input.placeholder = "Ketik jawabanmu di sini...";
+            input.className = "w-full p-3 bg-slate-950 border-2 border-amber-400 rounded-xl text-amber-300 font-bold text-center uppercase tracking-wider text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-amber-300";
+            wrapper.appendChild(input);
+
+            const btnKirim = document.createElement('button');
+            btnKirim.className = "w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all active:scale-95";
+            btnKirim.textContent = "Kirim Jawaban";
+            btnKirim.onclick = () => {
+                const jawab = input.value.trim().toUpperCase();
+                verifikasiJawaban(jawab === soal.kunci.toUpperCase());
+            };
+            wrapper.appendChild(btnKirim);
+
+            container.appendChild(wrapper);
+        }
+
+        // Timer Soal (Khusus Mode Sulit)
+        function mulaiTimerSoal(detik) {
+            if (gameState.timer) clearInterval(gameState.timer);
+            gameState.sisaWaktu = detik;
+            document.getElementById('timerText').textContent = `${gameState.sisaWaktu}s`;
+
+            gameState.timer = setInterval(() => {
+                gameState.sisaWaktu--;
+                document.getElementById('timerText').textContent = `${gameState.sisaWaktu}s`;
+                if (gameState.sisaWaktu <= 0) {
+                    clearInterval(gameState.timer);
+                    verifikasiJawaban(false); // Waktu Habis = Salah
+                }
+            }, 1000);
+        }
+
+        /* -----------------------------------------------------------------
+           SISTEM VERIFIKASI JAWABAN & UMPAN BALIK (FEEDBACK)
+        -------------------------------------------------------------------*/
+        function verifikasiJawaban(isBenar) {
+            if (gameState.timer) clearInterval(gameState.timer);
+
+            const soal = gameState.soalSaatIni;
+            const modal = document.getElementById('modalFeedback');
+            const icon = document.getElementById('iconFeedback');
+            const judul = document.getElementById('judulFeedback');
+            const sub = document.getElementById('subFeedback');
+            const pembahasan = document.getElementById('teksPembahasan');
+
+            if (isBenar) {
+                mainkanSFX('benar');
+                pemicuBintangPartikel();
+                setEkspresiMaskot('senang');
+                gameState.skor += 10;
+
+                icon.className = "w-10 h-10 rounded-full flex items-center justify-center text-xl bg-emerald-500/20 text-emerald-400 border border-emerald-400/40";
+                icon.innerHTML = `<i class="fa-solid fa-check"></i>`;
+                judul.textContent = "Alhamdulillah, Benar!";
+                judul.className = "font-extrabold text-base text-emerald-300";
+                sub.textContent = "Jawabanmu tepat sekali. Tambah +10 Skor!";
+            } else {
+                mainkanSFX('salah');
+                setEkspresiMaskot('bingung');
+                gameState.nyawa--;
+
+                icon.className = "w-10 h-10 rounded-full flex items-center justify-center text-xl bg-rose-500/20 text-rose-400 border border-rose-400/40";
+                icon.innerHTML = `<i class="fa-solid fa-xmark"></i>`;
+                judul.textContent = "Kurang Tepat!";
+                judul.className = "font-extrabold text-base text-rose-400";
+                sub.textContent = "Jangan berkecil hati, mari kita pelajari pembahasannya.";
+            }
+
+            pembahasan.textContent = soal.pembahasan;
+            updateStatsHeader();
+            modal.classList.remove('hidden');
+        }
+
+        function tutupFeedbackLanjutSoal() {
+            mainkanSFX('klik');
+            document.getElementById('modalFeedback').classList.add('hidden');
+            gameState.indexSoal++;
+            tampilkanSoal1Player();
+        }
+
+        /* -----------------------------------------------------------------
+           MODE 2 PEMAIN (2P SPLIT-SCREEN RACE ENGINE)
+        -------------------------------------------------------------------*/
+        function tampilkanSoal2Player() {
+            const soalP1 = BANK_SOAL[Math.floor(Math.random() * BANK_SOAL.length)];
+            const soalP2 = BANK_SOAL[Math.floor(Math.random() * BANK_SOAL.length)];
+
+            document.getElementById('soalP1').textContent = soalP1.pertanyaan;
+            document.getElementById('soalP2').textContent = soalP2.pertanyaan;
+
+            renderOpsi2Player('opsiP1', soalP1, 1);
+            renderOpsi2Player('opsiP2', soalP2, 2);
+        }
+
+        function renderOpsi2Player(containerId, soal, playerNum) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            if (soal.pilihan) {
+                soal.pilihan.forEach((pil, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "p-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-[11px] rounded-lg border border-slate-600 text-left transition-all active:scale-95";
+                    btn.textContent = `${pil}`;
+                    btn.onclick = () => jawab2Player(playerNum, idx === soal.kunci);
+                    container.appendChild(btn);
+                });
+            } else {
+                const btn = document.createElement('button');
+                btn.className = "p-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg";
+                btn.textContent = "Klik jika paham!";
+                btn.onclick = () => jawab2Player(playerNum, true);
+                container.appendChild(btn);
+            }
+        }
+
+        function jawab2Player(playerNum, isBenar) {
+            if (isBenar) {
+                mainkanSFX('benar');
+                if (playerNum === 1) gameState.skorP1 += 10;
+                else gameState.skorP2 += 10;
+            } else {
+                mainkanSFX('salah');
+            }
+
+            document.getElementById('skorP1').textContent = `Skor: ${gameState.skorP1}`;
+            document.getElementById('skorP2').textContent = `Skor: ${gameState.skorP2}`;
+
+            if (gameState.skorP1 >= 50 || gameState.skorP2 >= 50) {
+                selesaiPermainan2Player();
+            } else {
+                tampilkanSoal2Player();
+            }
+        }
+
+        /* -----------------------------------------------------------------
+           9. LAYAR KEMENANGAN & EVALUASI
+        -------------------------------------------------------------------*/
+        function selesaiPermainan() {
+            mainkanSFX('menang');
+            gantiLayar('screenHasil');
+
+            const totalSoal = gameState.bankSoalAktif.length;
+            const skorMax = totalSoal * 10;
+            const persentase = (gameState.skor / skorMax) * 100;
+
+            document.getElementById('skorAkhirText').textContent = gameState.skor;
+            document.getElementById('benarText').textContent = `${gameState.skor / 10} / ${totalSoal}`;
+
+            // Gelar & Bintang Rating
+            const bintangContainer = document.getElementById('containerBintangHasil');
+            const gelarText = document.getElementById('gelarText');
+
+            if (persentase >= 80) {
+                bintangContainer.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i>`;
+                gelarText.textContent = "Bintang Asmaul Husna";
+            } else if (persentase >= 50) {
+                bintangContainer.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><i class="fa-solid fa-star text-amber-400"></i><i class="fa-regular fa-star text-slate-600"></i>`;
+                gelarText.textContent = "Pejuang Asmaul Husna";
+            } else {
+                bintangContainer.innerHTML = `<i class="fa-solid fa-star text-amber-400"></i><i class="fa-regular fa-star text-slate-600"></i><i class="fa-regular fa-star text-slate-600"></i>`;
+                gelarText.textContent = "Murid Pembelajar";
+            }
+        }
+
+        function selesaiPermainan2Player() {
+            mainkanSFX('menang');
+            gantiLayar('screenHasil');
+
+            const pemenang = gameState.skorP1 > gameState.skorP2 ? "Pemain 1 (Hijau)" : "Pemain 2 (Biru)";
+            document.getElementById('judulHasil').textContent = `Selamat ${pemenang}!`;
+            document.getElementById('subHasil').textContent = `Pemenang Duel Kuis Adu Cepat Asmaul Husna`;
+            document.getElementById('skorAkhirText').textContent = `${gameState.skorP1} vs ${gameState.skorP2}`;
+            document.getElementById('gelarText').textContent = "Juara Adu Cepat";
+        }
+
+        /* -----------------------------------------------------------------
+           10. MODAL UTILITY & MODAL PETUNJUK
+        -------------------------------------------------------------------*/
+        function bukaModalPetunjuk() {
+            mainkanSFX('klik');
+            document.getElementById('modalPetunjuk').classList.remove('hidden');
+        }
+
+        function bukaPengaturanSuara() {
+            mainkanSFX('klik');
+            document.getElementById('modalPengaturanSuara').classList.remove('hidden');
+        }
+
+        function tutupModal(idModal) {
+            mainkanSFX('klik');
+            document.getElementById(idModal).classList.add('hidden');
+        }
+
+        /* -----------------------------------------------------------------
+           11. BINTANG PARTIKEL SELEBRASI CANVAS FX
+        -------------------------------------------------------------------*/
+        let canvas, ctx, particles = [];
+
+        function initFXCanvas() {
+            canvas = document.getElementById('fxCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            requestAnimationFrame(updateParticles);
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function pemicuBintangPartikel() {
+            if (!canvas) return;
+            const total = 25;
+            for (let i = 0; i < total; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    size: Math.random() * 6 + 4,
+                    color: ['#f59e0b', '#10b981', '#38bdf8', '#f43f5e'][Math.floor(Math.random() * 4)],
+                    life: 1
+                });
+            }
+        }
+
+        function updateParticles() {
+            if (ctx && canvas) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= 0.025;
+
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.life);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(updateParticles);
+        }
+    </script>
+</body>
+</html>
